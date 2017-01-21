@@ -1,13 +1,17 @@
 package com.danielasfregola.twitter4s
 package http.clients.streaming.statuses
 
+import com.danielasfregola.twitter4s.entities.enums.FilterLevel
 import com.danielasfregola.twitter4s.entities.enums.Language.Language
 import com.danielasfregola.twitter4s.entities.streaming.CommonStreamingMessage
+import com.danielasfregola.twitter4s.entities.enums.FilterLevel.FilterLevel
 import com.danielasfregola.twitter4s.http.clients.streaming.statuses.parameters._
-import com.danielasfregola.twitter4s.http.clients.streaming.{StreamingClient, TwitterStream}
-import com.danielasfregola.twitter4s.util.{ActorContextExtractor, Configurations}
+import com.danielasfregola.twitter4s.http.clients.streaming.{ StreamingClient, TwitterStream }
+import com.danielasfregola.twitter4s.util.{ ActorContextExtractor, Configurations }
 
 import scala.concurrent.Future
+
+
 
 trait TwitterStatusClient extends StreamingClient with Configurations with ActorContextExtractor {
 
@@ -37,15 +41,19 @@ trait TwitterStatusClient extends StreamingClient with Configurations with Actor
     *                    For more information <a href="https://dev.twitter.com/streaming/overview/request-parameters#language" target="_blank">
     *                      https://dev.twitter.com/streaming/overview/request-parameters#language</a>
     * @param stall_warnings : Default to false. Specifies whether stall warnings (`WarningMessage`) should be delivered as part of the updates.
-    * @param f: the function that defines how to process the received messages
+    * @param filter_level : Default to None. Set the minimum value of the filter_level Tweet attribute required to be included in the stream.
+    *                    For more information <a href="https://dev.twitter.com/streaming/overview/request-parameters#filter-level" target="_blank">
+    *                      https://dev.twitter.com/streaming/overview/request-parameters#filter-level</a>
+    * @param f : the function that defines how to process the received messages
     */
   def filterStatuses(follow: Seq[Long] = Seq.empty,
                      track: Seq[String] = Seq.empty,
                      locations: Seq[Double] = Seq.empty,
                      languages: Seq[Language] = Seq.empty,
-                     stall_warnings: Boolean = false)(f: PartialFunction[CommonStreamingMessage, Unit]): Future[TwitterStream] = {
+                     stall_warnings: Boolean = false,
+                     filter_level: FilterLevel = FilterLevel.None)(f: PartialFunction[CommonStreamingMessage, Unit]): Future[TwitterStream] = {
     require(follow.nonEmpty || track.nonEmpty || locations.nonEmpty, "At least one of 'follow', 'track' or 'locations' needs to be non empty")
-    val parameters = StatusFilterParameters(follow, track, locations, languages, stall_warnings)
+    val parameters = StatusFilterParameters(follow, track, locations, languages, stall_warnings, filter_level)
     preProcessing()
     Post(s"$statusUrl/filter.json", parameters: Product).processStream(f)
   }
@@ -73,12 +81,16 @@ trait TwitterStatusClient extends StreamingClient with Configurations with Actor
     *                    For more information <a href="https://dev.twitter.com/streaming/overview/request-parameters#language" target="_blank">
     *                      https://dev.twitter.com/streaming/overview/request-parameters#language</a>
     * @param stall_warnings : Default to false. Specifies whether stall warnings (`WarningMessage`) should be delivered as part of the updates.
-    * @param f: the function that defines how to process the received messages
+    * @param filter_level : Default to None. Set the minimum value of the filter_level Tweet attribute required to be included in the stream.
+    *                    For more information <a href="https://dev.twitter.com/streaming/overview/request-parameters#filter-level" target="_blank">
+    *                      https://dev.twitter.com/streaming/overview/request-parameters#filter-level</a>
+    * @param f : the function that defines how to process the received messages
     */
   def sampleStatuses(languages: Seq[Language] = Seq.empty,
-                     stall_warnings: Boolean = false)
+                     stall_warnings: Boolean = false,
+                     filter_level: FilterLevel = FilterLevel.None)
                     (f: PartialFunction[CommonStreamingMessage, Unit]): Future[TwitterStream] = {
-    val parameters = StatusSampleParameters(languages, stall_warnings)
+    val parameters = StatusSampleParameters(languages, stall_warnings, filter_level)
     preProcessing()
     Get(s"$statusUrl/sample.json", parameters).processStream(f)
   }
@@ -99,22 +111,26 @@ trait TwitterStatusClient extends StreamingClient with Configurations with Actor
     * Since it's an asynchronous event stream, all the events will be parsed as entities of type `CommonStreamingMessage`
     * and processed accordingly to the partial function `f`. All the messages that do not match `f` are automatically ignored.
     *
-    * @param count: Optional. The number of messages to backfill.
+    * @param count : Optional. The number of messages to backfill.
     *               For more information see <a href="https://dev.twitter.com/streaming/overview/request-parameters#count" target="_blank">
     *                 https://dev.twitter.com/streaming/overview/request-parameters#count</a>
     * @param languages : Empty by default. A comma separated list of 'BCP 47' language identifiers.
     *                    For more information <a href="https://dev.twitter.com/streaming/overview/request-parameters#language" target="_blank">
     *                      https://dev.twitter.com/streaming/overview/request-parameters#language</a>
     * @param stall_warnings : Default to false. Specifies whether stall warnings (`WarningMessage`) should be delivered as part of the updates.
-    * @param f: the function that defines how to process the received messages.
+    * @param filter_level : Default to None. Set the minimum value of the filter_level Tweet attribute required to be included in the stream.
+    *                    For more information <a href="https://dev.twitter.com/streaming/overview/request-parameters#filter-level" target="_blank">
+    *                      https://dev.twitter.com/streaming/overview/request-parameters#filter-level</a>
+    * @param f : the function that defines how to process the received messages.
     */
   def firehoseStatuses(count: Option[Int] = None,
                        languages: Seq[Language] = Seq.empty,
-                       stall_warnings: Boolean = false)
+                       stall_warnings: Boolean = false,
+                       filter_level: FilterLevel = FilterLevel.None)
                       (f: PartialFunction[CommonStreamingMessage, Unit]): Future[TwitterStream] = {
     val maxCount = 150000
     require(Math.abs(count.getOrElse(0)) <= maxCount, s"count must be between -$maxCount and +$maxCount")
-    val parameters = StatusFirehoseParameters(languages, count, stall_warnings)
+    val parameters = StatusFirehoseParameters(languages, count, stall_warnings, filter_level)
     preProcessing()
     Get(s"$statusUrl/firehose.json", parameters).processStream(f)
   }

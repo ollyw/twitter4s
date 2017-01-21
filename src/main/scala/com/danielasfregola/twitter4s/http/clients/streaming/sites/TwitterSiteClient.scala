@@ -1,13 +1,14 @@
 package com.danielasfregola.twitter4s
 package http.clients.streaming.sites
 
+import com.danielasfregola.twitter4s.entities.enums.FilterLevel.FilterLevel
 import com.danielasfregola.twitter4s.entities.enums.Language.Language
-import com.danielasfregola.twitter4s.entities.enums.WithFilter
+import com.danielasfregola.twitter4s.entities.enums.{ FilterLevel, WithFilter }
 import com.danielasfregola.twitter4s.entities.enums.WithFilter.WithFilter
 import com.danielasfregola.twitter4s.entities.streaming.SiteStreamingMessage
 import com.danielasfregola.twitter4s.http.clients.streaming.sites.parameters.SiteParameters
-import com.danielasfregola.twitter4s.http.clients.streaming.{StreamingClient, TwitterStream}
-import com.danielasfregola.twitter4s.util.{ActorContextExtractor, Configurations}
+import com.danielasfregola.twitter4s.http.clients.streaming.{ StreamingClient, TwitterStream }
+import com.danielasfregola.twitter4s.util.{ ActorContextExtractor, Configurations }
 
 import scala.concurrent.Future
 
@@ -28,20 +29,23 @@ trait TwitterSiteClient extends StreamingClient with Configurations with ActorCo
     * @param follow : Empty by default. A comma separated list of user IDs, indicating the users to return statuses for in the stream.
     *                 For more information <a href="https://dev.twitter.com/streaming/overview/request-parameters#follow" target="_blank">
     *                   https://dev.twitter.com/streaming/overview/request-parameters#follow</a>
-    * @param with: `User` by default. Specifies whether to return information for just the users specified in the follow parameter, or include messages from accounts they follow.
+    * @param with : `User` by default. Specifies whether to return information for just the users specified in the follow parameter, or include messages from accounts they follow.
     *              For more information see <a href="https://dev.twitter.com/streaming/overview/request-parameters" target="_blank">
     *                https://dev.twitter.com/streaming/overview/request-parameters</a>
-    * @param replies: Optional. By default @replies are only sent if the current user follows both the sender and receiver of the reply.
+    * @param replies : Optional. By default @replies are only sent if the current user follows both the sender and receiver of the reply.
     *                 To receive all the replies, set the argument to `true`.
     *                 For more information see <a href="https://dev.twitter.com/streaming/overview/request-parameters#replies" target="_blank">
     *                   https://dev.twitter.com/streaming/overview/request-parameters#replies</a>
-    * @param stringify_friend_ids: Optional. Specifies whether to send the Friend List preamble as an array of integers or an array of strings.
+    * @param stringify_friend_ids : Optional. Specifies whether to send the Friend List preamble as an array of integers or an array of strings.
     *                              For more information see <a href="https://dev.twitter.com/streaming/overview/request-parameters#stringify_friend_id" tagert="_blank">
     *                                https://dev.twitter.com/streaming/overview/request-parameters#stringify_friend_id</a>
     * @param languages : Empty by default. A comma separated list of 'BCP 47' language identifiers.
     *                    For more information <a href="https://dev.twitter.com/streaming/overview/request-parameters#language" target="_blank">
     *                      https://dev.twitter.com/streaming/overview/request-parameters#language</a>
     * @param stall_warnings : Default to false. Specifies whether stall warnings (`WarningMessage`) should be delivered as part of the updates.
+    * @param filter_level : Default to None. Set the minimum value of the filter_level Tweet attribute required to be included in the stream.
+    *                    For more information <a href="https://dev.twitter.com/streaming/overview/request-parameters#filter-level" target="_blank">
+    *                      https://dev.twitter.com/streaming/overview/request-parameters#filter-level</a>
     * @param f: the function that defines how to process the received messages
     */
   def siteEvents(follow: Seq[Long] = Seq.empty,
@@ -49,9 +53,10 @@ trait TwitterSiteClient extends StreamingClient with Configurations with ActorCo
                  replies: Option[Boolean] = None,
                  stringify_friend_ids: Boolean = false,
                  languages: Seq[Language] = Seq.empty,
-                 stall_warnings: Boolean = false)(f: PartialFunction[SiteStreamingMessage, Unit]): Future[TwitterStream] = {
+                 stall_warnings: Boolean = false,
+                 filter_level: FilterLevel = FilterLevel.None)(f: PartialFunction[SiteStreamingMessage, Unit]): Future[TwitterStream] = {
     val repliesAll = replies.flatMap(x => if (x) Some("all") else None)
-    val parameters = SiteParameters(follow, `with`, repliesAll, stringify_friend_ids, languages, stall_warnings)
+    val parameters = SiteParameters(follow, `with`, repliesAll, stringify_friend_ids, languages, stall_warnings, filter_level)
     preProcessing()
     Get(s"$siteUrl/site.json", parameters).processStream(f)
   }

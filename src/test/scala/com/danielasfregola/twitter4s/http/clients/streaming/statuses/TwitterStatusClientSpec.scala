@@ -1,7 +1,7 @@
 package com.danielasfregola.twitter4s.http.clients.streaming.statuses
 
-import akka.http.scaladsl.model.{HttpEntity, HttpMethods}
-import com.danielasfregola.twitter4s.entities.enums.Language
+import akka.http.scaladsl.model.{ HttpEntity, HttpMethods }
+import com.danielasfregola.twitter4s.entities.enums.{ FilterLevel, Language }
 import com.danielasfregola.twitter4s.util.streaming.ClientSpec
 
 class TwitterStatusClientSpec extends ClientSpec {
@@ -13,13 +13,14 @@ class TwitterStatusClientSpec extends ClientSpec {
     "start a filtered status stream" in new TwitterStatusClientSpecContext {
       val result: Unit =
         when(
-          filterStatuses(track = Seq("trending"), languages = Seq(Language.Hungarian, Language.Bengali))(
+          filterStatuses(track = Seq("trending"), languages = Seq(Language.Hungarian, Language.Bengali),
+            filter_level = FilterLevel.Medium)(
             dummyProcessing))
           .expectRequest { request =>
             request.method === HttpMethods.POST
             request.uri.endpoint === "https://stream.twitter.com/1.1/statuses/filter.json"
             request.entity === HttpEntity(`application/x-www-form-urlencoded`,
-                                          "language=hu%2Cbn&stall_warnings=false&track=trending")
+                                          "filter_level=medium&language=hu%2Cbn&stall_warnings=false&track=trending")
           }
           .respondWithOk
           .await
@@ -32,7 +33,7 @@ class TwitterStatusClientSpec extends ClientSpec {
           .expectRequest { request =>
             request.method === HttpMethods.GET
             request.uri.endpoint === "https://stream.twitter.com/1.1/statuses/sample.json"
-            request.uri.queryString() === Some("language=hu,bn&stall_warnings=false")
+            request.uri.queryString() === Some("filter_level=none&language=hu,bn&stall_warnings=false")
           }
           .respondWithOk
           .await
@@ -45,7 +46,7 @@ class TwitterStatusClientSpec extends ClientSpec {
           .expectRequest { request =>
             request.method === HttpMethods.GET
             request.uri.endpoint === "https://stream.twitter.com/1.1/statuses/firehose.json"
-            request.uri.queryString() === Some("language=hu,bn&stall_warnings=false")
+            request.uri.queryString() === Some("filter_level=none&language=hu,bn&stall_warnings=false")
           }
           .respondWithOk
           .await

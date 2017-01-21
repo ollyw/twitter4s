@@ -15,7 +15,7 @@ class TwitterSiteClientSpec extends ClientSpec {
         when(siteEvents(languages = Seq(Language.Italian))(dummyProcessing)).expectRequest { request =>
           request.method === HttpMethods.GET
           request.uri.endpoint === "https://sitestream.twitter.com/1.1/site.json"
-          request.uri.queryString() === Some("language=it&stall_warnings=false&stringify_friend_ids=false&with=user")
+          request.uri.queryString() === Some("filter_level=none&language=it&stall_warnings=false&stringify_friend_ids=false&with=user")
         }.respondWithOk.await
       result.isInstanceOf[Unit] should beTrue
     }
