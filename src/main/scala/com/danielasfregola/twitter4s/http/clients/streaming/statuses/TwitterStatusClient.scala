@@ -47,7 +47,7 @@ trait TwitterStatusClient extends StreamingClient with Configurations with Actor
     require(follow.nonEmpty || track.nonEmpty || locations.nonEmpty, "At least one of 'follow', 'track' or 'locations' needs to be non empty")
     val parameters = StatusFilterParameters(follow, track, locations, languages, stall_warnings)
     preProcessing()
-    Post(s"$statusUrl/filter.json", parameters.asInstanceOf[Product]).processStream(f)
+    Post(s"$statusUrl/filter.json", parameters: Product).processStream(f)
   }
 
   @deprecated("use filterStatuses instead", "2.2")
